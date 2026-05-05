@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { HEBREW_TRANSLATIONS, calculateAge, UNDERAGE_THRESHOLD } from '@/lib/constants';
+import { AlertCircle } from 'lucide-react';
+import { HEBREW_TRANSLATIONS, calculateAge, COLORS } from '@/lib/constants';
 
 interface AgeVerificationProps {
-  onAgeVerified: (age: number, isAdult: boolean) => void;
+  onAgeVerified: (birthYear: number) => void;
 }
 
 export default function AgeVerification({ onAgeVerified }: AgeVerificationProps) {
@@ -14,153 +15,160 @@ export default function AgeVerification({ onAgeVerified }: AgeVerificationProps)
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const currentYear = new Date().getFullYear();
-  const minYear = currentYear - 100;
-  const maxYear = currentYear - 13;
+  const minBirthYear = currentYear - 100;
+  const maxBirthYear = currentYear - 13;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     setError('');
 
     if (!birthYear) {
-      setError(HEBREW_TRANSLATIONS.yearRequired);
+      setError(HEBREW_TRANSLATIONS.invalid);
       return;
     }
 
-    const year = parseInt(birthYear);
+    const year = parseInt(birthYear, 10);
 
-    if (year < minYear || year > maxYear) {
-      setError(HEBREW_TRANSLATIONS.invalidYear);
+    if (isNaN(year) || year < minBirthYear || year > maxBirthYear) {
+      setError(HEBREW_TRANSLATIONS.invalid);
       return;
     }
 
     setIsSubmitting(true);
 
-    // Simulate slight delay for UX
-    setTimeout(() => {
-      const age = calculateAge(year);
-      const isAdult = age >= UNDERAGE_THRESHOLD;
+    // Simulate API call
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
-      // Store in localStorage
-      localStorage.setItem('userAge', age.toString());
-      localStorage.setItem('userBirthYear', year.toString());
-      localStorage.setItem('ageVerified', 'true');
+    onAgeVerified(year);
+  };
 
-      onAgeVerified(age, isAdult);
-    }, 600);
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSubmit();
+    }
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.6 }}
-      className="min-h-screen w-full flex items-center justify-center px-4"
-    >
-      <div className="w-full max-w-md">
-        {/* Header Animation */}
+    <div className="min-h-screen w-full bg-gradient-to-b from-darker via-dark to-darker flex items-center justify-center px-4">
+      {/* Animated Background */}
+      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
         <motion.div
-          initial={{ opacity: 0, y: -30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="text-center mb-8"
-        >
-          <h1 className="text-5xl font-bold mb-2 bg-gradient-to-r from-purple-400 via-pink-400 to-amber-400 bg-clip-text text-transparent animate-pulse">
-            VibeBox
-          </h1>
-          <p className="text-white/60 text-lg">{HEBREW_TRANSLATIONS.welcomeMessage}</p>
-        </motion.div>
+          animate={{ y: [0, -30, 0] }}
+          transition={{ duration: 8, repeat: Infinity }}
+          className="absolute top-1/4 right-1/4 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl"
+        />
+        <motion.div
+          animate={{ y: [0, 30, 0] }}
+          transition={{ duration: 10, repeat: Infinity }}
+          className="absolute bottom-1/4 left-1/4 w-80 h-80 bg-pink-500/20 rounded-full blur-3xl"
+        />
+      </div>
 
-        {/* Form Container */}
-        <motion.form
-          onSubmit={handleSubmit}
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          className="glass-strong p-8 backdrop-blur-xl"
-        >
-          {/* Instructions */}
-          <div className="mb-6">
-            <p className="text-white/80 text-center mb-4">
-              {HEBREW_TRANSLATIONS.ageVerificationText}
+      {/* Main Container */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="w-full max-w-md"
+      >
+        {/* Card */}
+        <div className="glass-strong p-8 md:p-12 backdrop-blur-xl">
+          {/* Header */}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+            className="text-center mb-8"
+          >
+            <h1 className="text-5xl font-bold mb-2 animate-pulse">🎉</h1>
+            <h2 className="text-3xl font-bold text-white mb-2">{HEBREW_TRANSLATIONS.appName}</h2>
+            <p className="text-amber-400 font-semibold text-sm">
+              {HEBREW_TRANSLATIONS.tagline}
             </p>
-            <p className="text-amber-400 text-center text-sm font-semibold">
-              {HEBREW_TRANSLATIONS.adultContent}
-            </p>
-          </div>
+          </motion.div>
 
-          {/* Birth Year Input */}
-          <div className="mb-6">
-            <label className="block text-sm font-semibold mb-2 text-white">
-              {HEBREW_TRANSLATIONS.birthYearLabel}
-            </label>
-            <input
+          {/* Content */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+            className="space-y-6"
+          >
+            {/* Question */}
+            <div>
+              <label className="block text-lg font-semibold mb-3 text-center">
+                {HEBREW_TRANSLATIONS.selectYearOfBirth}
+              </label>
+            </div>
+
+            {/* Input */}
+            <motion.input
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.5 }}
               type="number"
+              placeholder={HEBREW_TRANSLATIONS.enterBirthYear}
               value={birthYear}
               onChange={(e) => {
                 setBirthYear(e.target.value);
                 setError('');
               }}
-              placeholder={currentYear - 25}
-              min={minYear}
-              max={maxYear}
-              className={`w-full px-4 py-3 rounded-lg bg-white/10 border-2 backdrop-blur-xl text-center text-2xl font-bold text-white placeholder:text-white/30 focus:outline-none focus:border-purple-500 transition-all ${
-                error ? 'border-red-500' : 'border-white/20'
-              }`}
+              onKeyPress={handleKeyPress}
+              min={minBirthYear}
+              max={maxBirthYear}
+              className="w-full text-center text-xl font-bold"
               disabled={isSubmitting}
             />
-            <p className="text-xs text-white/60 text-center mt-2">
-              {HEBREW_TRANSLATIONS.yearRange}: {minYear} - {maxYear}
+
+            {/* Error Message */}
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center gap-2 bg-red-500/20 border border-red-500/50 rounded-lg p-4 text-red-300"
+              >
+                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                <span className="text-sm">{error}</span>
+              </motion.div>
+            )}
+
+            {/* Helper Text */}
+            <p className="text-white/50 text-xs text-center">
+              {minBirthYear} - {maxBirthYear}
             </p>
-          </div>
+          </motion.div>
 
-          {/* Error Message */}
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-              className="mb-4 p-3 bg-red-500/20 border border-red-500 rounded-lg"
-            >
-              <p className="text-red-400 text-sm text-center font-semibold">{error}</p>
-            </motion.div>
-          )}
-
-          {/* Submit Button */}
+          {/* Button */}
           <motion.button
-            type="submit"
-            disabled={isSubmitting}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 0.5 }}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="w-full btn btn-primary py-3 text-lg font-bold mb-4 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className="btn btn-primary w-full mt-8 text-lg"
           >
             {isSubmitting ? (
-              <span className="flex items-center justify-center gap-2">
-                <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity }} />
-                {HEBREW_TRANSLATIONS.verifying}
-              </span>
+              <>
+                <div className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                טוען...
+              </>
             ) : (
-              HEBREW_TRANSLATIONS.continueButton
+              HEBREW_TRANSLATIONS.confirm
             )}
           </motion.button>
 
-          {/* Legal Notice */}
-          <p className="text-xs text-white/40 text-center">
-            {HEBREW_TRANSLATIONS.legalNotice}
-          </p>
-        </motion.form>
-
-        {/* Background Glow */}
-        <motion.div
-          animate={{ y: [0, -20, 0] }}
-          transition={{ duration: 6, repeat: Infinity }}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-600/30 rounded-full blur-3xl -z-10"
-        />
-        <motion.div
-          animate={{ y: [0, 20, 0] }}
-          transition={{ duration: 8, repeat: Infinity }}
-          className="absolute bottom-0 right-0 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl -z-10"
-        />
-      </div>
-    </motion.div>
+          {/* Footer */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6, duration: 0.5 }}
+            className="text-white/40 text-xs text-center mt-6"
+          >
+            ✨ מה שקורה ב-VibeBox נשאר ב-VibeBox ✨
+          </motion.p>
+        </div>
+      </motion.div>
+    </div>
   );
 }
